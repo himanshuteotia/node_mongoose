@@ -1,37 +1,23 @@
-var express = require("express")
-var app = express();
-var mongoose = require("mongoose");
-var mongoDB = 'mongodb://localhost:27017/mongoose_test';
-mongoose.createConnection(mongoDB)
-mongoose.Promise = global.Promise;
+// The main application script, ties everything together.
 
-//Get the default connection
-var db = mongoose.connection;
+var express = require('express');
+var mongoose = require('mongoose');
+var app = module.exports = express.createServer();
 
-//Bind connection to error event (to get notification of connection errors)
-db.on('error', console.error.bind(console, 'MongoDB connection error:'));
+// connect to Mongo when the app initializes
+mongoose.connect('mongodb://localhost/norum');
 
-
-// Define schema
-var Schema = mongoose.Schema;
-
-var SomeModelSchema = new Schema({
-    name: String,
-    date: Date
+app.configure(function(){
+  app.use(express.bodyParser());
+  app.use(express.methodOverride());
+  app.use(app.router);
 });
 
-// Compile model from schema
-var SomeModel = mongoose.model('SomeModel', SomeModelSchema );
+// set up the RESTful API, handler methods are defined in api.js
+var api = require('./controllers/api.js');
+app.post('/thread', api.post);
+app.get('/thread/:title.:format?', api.show);
+app.get('/thread', api.list);
 
-// Create an instance of model SomeModel
-var awesome_instance = new SomeModel({ name: 'awesome' });
-
-// Save the new model instance, passing a callback
-awesome_instance.save(function (err) {
-  if (err) return handleError(err);
-  // saved!
-});
-
-
-app.listen(9000)
-console.log("Server listening on port 9000")
+app.listen(3000);
+console.log("Express server listening on port %d", app.address().port);
